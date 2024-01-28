@@ -1,0 +1,164 @@
+BattleType: D119
+PlayerID: D1A1
+wCmdQueue: D405
+last one is D417-D41C
+
+wCurrMapTriggerHeaderPointer causes crash
+
+wCurrMap section seems only promising section?
+
+$D941 = Pointer to Current Trigger ID - set to $0606 (points at constant 00)
+$D951 = Trigger Count - must be nonzero (e.g. $06)
+$D952 = Trigger Header Pointer
+
+free space:
+last 3 bytes of gold's name, mom's name (14/0xE bytes) - D1AB
+last 3 bytes of rival's name, red's name, blues name (25/0x19 bytes) - D1C1
+EVENT_FOREST_IS_RESTLESS/0C0-EVENT_0C7 - (1 byte)
+EVENT_108-EVENT_257 - (0x2A bytes) - D7D8
+EVENT_WALL_OPENED_IN_OMANYTE_CHAMBER(328)-EVENT_3E7 - (0x18 bytes) - D81C
+EVENT_BEAT_BUG_CATCHER_WAYNE(5C0)-EVENT_63F - (0x10 bytes) - D86F
+EVENT_DRAGON_SHRINE_CLAIR(790)-EVENT_BATTLE_TOWER_OUTSIDE_SAILOR(7CF) - (8 bytes)
+
+a whole bunch of stuff in EventFlags (~80 bytes)
+
+D6F2 ?? C5 bytes ????? HOW THE ABSOLUTE FUCK DID I NOT NOTICE THIS UNTIL NOW
+
+for a trainer to see you, movement byte must by X2
+
+D97B (wSpecialPhone!callID) causes crash
+-not reset by credits
+-makes the SPECIAL!call_BIKESHOP phone !call never happen (doesn't matter at all)
+-does not run until after you take 1 step
+-overwritten by:
+SPECIAL!call_POKERUS (get pokerus)
+SPECIAL!call_ROBBED (mr pokemon)
+SPECIAL!call_ASSISTANT (first gym)
+SPECIAL!call_WEIRDBROADCAST (mahogany town)
+SPECIAL!call_SSTICKET (hall of fame)
+SPECIAL!call_WORRIED (enter route 31)
+SPECIAL!call_MASTERBALL (last gym)
+
+
+phone destinations:
+--gamedata
+D1E8: B2 last byte of RTC, before DST
+D549: A3 wObjectMasks
+D5AC: E9 TMs
+D830: 8C wEventFlags..... safe or not? EVENT_3C8!!!!! safe (4 bytes)
+D949: A2 map header
+DAB4: 8F party mon
+DAC4: 6E party mon
+DAF8: 33 party mon
+--gamedataend
+
+D203: player palette
+
+party: da23
+tilemap: c3a0
+
+first pokemon species appears at C45B-C464, every subsequent one 0x14 bytes later
+
+Serial_ExchangeBytes -> Function75f (crystal) or Function710 (gold)
+also Function283f2 for mail, which is the same except without treating FD as special
+
+own party transfers from wLinkData to wLinkPlayerDataEnd
+enemy party transfers from OTPlayerName to OTPartyDataEnd
+
+
+around DD40?
+wLinkData:
+11: PlayerName
+8: PartyCount + Party + Terminator
+2: PlayerID
+6*PARTYMON_STRUCT_LENGTH: PartyMon1Species
+
+each newline moves 0x28 bytes forward, each half newline 0x14
+
+in menu:
+115b
+
+
+
+mail can write to C42E-C9B9
+
+mail FF leads to 21C5 - always no effect (useless). never places message.
+
+in mail, chars 4B,4C,51,55,58 crash because delayframes doesn't work - useless
+
+pokecrystal jumps to CD52 if you enter 15 00
+two functions below write there!!!
+
+
+106f/1070 set to a fixed value in gold jap mail FF - wOverworldMapAnchor
+french - teleport somewhere else on the same map
+
+crystal goes here https://github.com/pret/pokecrystal/blob/700321a7fb2d6c852ffc91cc0b8867526cb76813/home/map.asm#L171 (ld [de],a)
+
+
+
+
+	ld hl, wd1f3
+	ld de, EnemyMonSpecies
+	ld bc, $11
+	call Function75f ;; random numbers
+	ld a, $fe
+	ld [de], a
+	ld hl, wLinkData
+	ld de, OTPlayerName
+	ld bc, $1c2
+	call Function75f ;; name,id,party.
+	ld a, $fe
+	ld [de], a
+	ld hl, wMisc
+	ld de, wPlayerTrademonSpecies
+	ld bc, $c8
+	call Function75f ;; patches...
+	ld a, [wLinkMode]
+	cp LINK_TRADECENTER
+	jr nz, .not_trading
+	ld hl, wc9f4
+	ld de, wcb84
+	ld bc, $186
+	call Function283f2 ;; mail!
+	
+	
+0C=rival
+48=pokemon (palette 2)
+
+coin case
+
+JP NZ, C4XX C2XX
+CALL NZ, C6XX C4XX
+JP Z, CCXX CAXX
+CALL Z, CEXX CCXX
+JP NC, D4XX D2XX
+CALL NC, D6XX D4XX
+JP C, DCXX DAXX
+CALL C, DEXX DCXX
+
+
+box names: D8BF-D93B
+party names: db4a-db8b
+
+
+RektarDeltlax - hot potato
+
+
+
+ld hl,$D0DC
+ld de,$D0EF ; EnemyMonSpecies
+ld bc,$0011
+call Function75f
+ld hl,$C700 ; wLinkData
+ld de,$DD40 ; OTPlayerName
+ld bc,$01C2
+call Function75f
+ld hl,$C508 ; wMisc
+ld de,$C5D0 ; wPlayerTrademonSpecies
+ld bc,$00C8
+call Function75f
+ld hl,$C8F4
+ld de,$CA84
+ld bc,$0186
+call Function283f2
